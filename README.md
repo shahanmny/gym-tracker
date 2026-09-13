@@ -1,4 +1,4 @@
-# Gym Tracker — Hyperbolic Time Chamber
+# Gym Tracker, Hyperbolic Time Chamber
 
 A single-page dumbbell hypertrophy tracker. 140 days, 20 weeks, 4 lifting days a week, 5 exercises a day, straight sets only.
 
@@ -6,7 +6,7 @@ Log the weight and reps for each set and the page works out the next session's t
 
 ## Files
 
-- `index.html` — the whole app: markup, styles, and the progression logic, in one file.
+- `index.html`, the whole app: markup, styles, and the progression logic, in one file.
 
 ## Program structure
 
@@ -18,6 +18,10 @@ Log the weight and reps for each set and the page works out the next session's t
 | 14 | Deload (2 sets) | 4 |
 | 15–20 | Block C | 24 |
 
+## Deployment
+
+`index.html` is deployed as a Claude artifact, a hosted page that runs the file as is and provides the shared database used for logging.
+
 ## Data
 
-Workout logs are stored separately from this source, in the hosted page's own database — this repo only tracks the program and app code, not logged sets.
+Workout logs are stored separately from this source, in the hosted page's own database, this repo only tracks the program and app code, not logged sets.
