@@ -736,17 +736,47 @@ function renderDay(){
 
 function paintNext(ex, wrap){
   const el = $(".nextup", wrap);
-  const t  = nextTarget(ex, sessionAt(week, day)[ex.id] || [], setsFor(week),
-                        isDeload(week), sessionAt(week - 1, day)[ex.id] || [],
-                        setsFor(week + 1));
-  if (!t){ el.hidden = true; el.innerHTML = ""; el.className = "nextup"; return; }
+  let t = nextTarget(ex, sessionAt(week, day)[ex.id] || [], setsFor(week),
+                      isDeload(week), sessionAt(week - 1, day)[ex.id] || [],
+                      setsFor(week + 1));
+  let label = "Next session";
+  /* This week isn't fully logged yet. Walk backward to the most recent
+     week this exercise WAS fully logged and project forward to today's
+     set count, so the target shows before you've typed anything, not
+     only after. Degrades to the last known session across a skipped
+     week; stays hidden only if nothing has ever been logged. */
+  if (!t){
+    label = "Today's target";
+    for (let w = week - 1; w >= 1 && !t; w--){
+      t = nextTarget(ex, sessionAt(w, day)[ex.id] || [], setsFor(w),
+                      isDeload(w), sessionAt(w - 1, day)[ex.id] || [],
+                      setsFor(week));
+    }
+  }
+  if (!t){
+    /* No computable target. In week 1 with nothing logged yet that's just
+       the normal starting point, stay quiet and let the static rep range
+       carry it. From week 2 on it means a gap in the log (this week and
+       every prior week for this exercise are incomplete), so say so
+       instead of silently showing nothing. */
+    if (week > 1){
+      el.hidden = false;
+      el.className = "nextup hold";
+      el.innerHTML =
+        '<span class="dot"></span><span class="lbl">Missing data</span>' +
+        "<span class=\"val\">Fill in last week's log to see your target.</span>";
+    } else {
+      el.hidden = true; el.innerHTML = ""; el.className = "nextup";
+    }
+    return;
+  }
   el.hidden = false;
   el.className = "nextup " + t.cls;
   const val = t.uniform === false
     ? t.sets.map(x => fmt(x.w) + "×" + x.r).join(", ")
     : '<b>' + fmt(t.w) + ' lb</b> × ' + t.reps.join(", ");
   el.innerHTML =
-    '<span class="dot"></span><span class="lbl">Next session</span>' +
+    '<span class="dot"></span><span class="lbl">' + label + '</span>' +
     '<span class="val">' + val + '</span><span class="lbl">' + t.why + '</span>';
 }
 
