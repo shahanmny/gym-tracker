@@ -550,7 +550,7 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
     done.push({ w:Number(r.w), r:Number(r.r) });
   }
   if (zero)
-    return { cls:"hold", uniform:true, w:done[0].w, reps:done.map(d => d.r),
+    return { uniform:true, w:done[0].w, reps:done.map(d => d.r),
              why:"a set went to zero, drop a setting and rebuild" };
 
   const uniform   = done.every(d => d.w === done[0].w);
@@ -559,7 +559,7 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
   const nSetsNext = nextSets || nSets;
 
   if (deload)
-    return { cls:"hold", uniform:uniform, w:w, sets:done, reps:reps.slice(),
+    return { uniform:uniform, w:w, sets:done, reps:reps.slice(),
              why:"deload, hold this weight, no jump this week" };
 
   /* Top of the range on every set, at ONE weight → next real setting.
@@ -568,9 +568,9 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
   if (uniform && reps.every(r => r >= ex.hi)){
     const up = nextWeight(w);
     if (up == null)
-      return { cls:"go", uniform:true, w:w, reps:new Array(nSetsNext).fill(ex.hi),
+      return { uniform:true, w:w, reps:new Array(nSetsNext).fill(ex.hi),
                why:"52.5 lb is the top, add difficulty, not weight" };
-    return { cls:"go", uniform:true, w:up, reps:new Array(nSetsNext).fill(ex.lo),
+    return { uniform:true, w:up, reps:new Array(nSetsNext).fill(ex.lo),
              why:"+" + fmt(up - w) + " lb, you earned the jump" };
   }
 
@@ -590,7 +590,7 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
       const cAvg = reps.reduce((a, b) => a + b, 0) / nSets;
       if (cAvg <= pAvg){
         const down = prevWeight(w);
-        return { cls:"hold", uniform:true, w:w, reps:reps.slice(),
+        return { uniform:true, w:w, reps:reps.slice(),
                  why:down == null
                    ? "no gain on this weight, run it back, it's the lightest setting"
                    : "no gain on this weight, run it back, or drop to " + fmt(down) + " lb if it stalls again" };
@@ -599,11 +599,11 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
   }
 
   if (!uniform)
-    return { cls:"climb", uniform:false,
+    return { uniform:false,
              sets:done.map(d => ({ w:d.w, r:Math.min(ex.hi, d.r + 1) })),
              why:"+1 rep per set, same weights" };
 
-  return { cls:"climb", uniform:true, w:w,
+  return { uniform:true, w:w,
            reps:reps.map(r => Math.min(ex.hi, r + 1)).slice(0, nSetsNext),
            why:"+1 rep per set, same weight" };
 }
