@@ -147,14 +147,8 @@
   .rail span.done{background:var(--ink-3)}
   .rail span.now{background:var(--accent);opacity:1}
 
-  /* inline target, appended into .extarget's own line */
+  /* inline target, appended into .extarget's own line, same neutral tone as the rest of it */
   .target-dyn b{font-weight:600}
-  .target-dyn.go{color:var(--ok)}
-  .target-dyn.go b{color:var(--ok)}
-  .target-dyn.hold{color:var(--warn)}
-  .target-dyn.hold b{color:var(--warn)}
-  .target-dyn.climb{color:var(--accent)}
-  .target-dyn.climb b{color:var(--accent)}
 
   /* ---------- day tabs ---------- */
   .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin-bottom:1.25rem}
@@ -739,22 +733,19 @@ function paintNext(ex, wrap){
        and every prior week for this exercise are incomplete), so say so
        instead of silently showing nothing. */
     if (week > 1){
-      el.className = "target-dyn hold";
       el.innerHTML = " &nbsp;·&nbsp; fill in last week's log to see your target";
       return;
     }
     const startTxt = ex.start === 0 ? "bodyweight" : fmt(ex.start) + " lb " + ex.unit;
     const step = ex.start > 0 ? stepFrom(ex.start) : null;
-    el.className = "target-dyn";
     el.innerHTML = " &nbsp;·&nbsp; start <b>" + startTxt + "</b>" +
       (step != null ? " &nbsp;·&nbsp; next rung +" + fmt(step) + " lb" : "");
     return;
   }
-  el.className = "target-dyn " + t.cls;
   const val = t.uniform === false
     ? t.sets.map(x => fmt(x.w) + "×" + x.r).join(", ")
     : '<b>' + fmt(t.w) + ' lb</b> × ' + t.reps.join(", ");
-  el.innerHTML = " &nbsp;·&nbsp; " + label + " " + val + " &nbsp;·&nbsp; " + t.why;
+  el.innerHTML = " &nbsp;·&nbsp; " + label + " " + val;
 }
 
 function paintWeek(){
