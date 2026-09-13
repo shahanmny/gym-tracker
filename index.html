@@ -712,6 +712,7 @@ function paintNext(ex, wrap){
                       isDeload(week), sessionAt(week - 1, day)[ex.id] || [],
                       setsFor(week + 1));
   let label = "next week";
+  const thisWeekDone = !!t;
   /* This week isn't fully logged yet. Walk backward to the most recent
      week this exercise WAS fully logged and project forward to today's
      set count, so the target shows before you've typed anything, not
@@ -745,7 +746,12 @@ function paintNext(ex, wrap){
   const val = t.uniform === false
     ? t.sets.map(x => fmt(x.w) + "×" + x.r).join(", ")
     : '<b>' + fmt(t.w) + ' lb</b> × ' + t.reps.join(", ");
-  el.innerHTML = " &nbsp;·&nbsp; " + label + " " + val;
+  /* The reasoning ("+2.5 lb, you earned the jump") only makes sense once
+     you've actually finished today's session and this is forecasting
+     next week, it's not shown for a target still projected from last
+     week's data. */
+  el.innerHTML = " &nbsp;·&nbsp; " + label + " " + val +
+    (thisWeekDone ? " &nbsp;·&nbsp; " + t.why : "");
 }
 
 function paintWeek(){
