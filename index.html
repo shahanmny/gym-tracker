@@ -24,7 +24,7 @@
     --warn:#9A6206;
     --warn-soft:#F4E8D2;
     /* Placeholder defaults only, renderTabs()/renderDay() overwrite --tc/--dc
-       inline per element to that day's --day-N tone, so .tab/.ex/.nextup
+       inline per element to that day's --day-N tone, so .tab/.ex
        accents shift with whichever day is active. */
     --dc:var(--accent);
     --tc:var(--accent);
@@ -147,31 +147,14 @@
   .rail span.done{background:var(--ink-3)}
   .rail span.now{background:var(--accent);opacity:1}
 
-  /* next-session target line */
-  .nextup{
-    display:flex;gap:.4rem;flex-wrap:wrap;align-items:baseline;
-    margin-top:.55rem;padding:.4rem .6rem;border-left:2px solid var(--dc);
-    background:var(--surface);font-size:.8rem;
-  }
-  .nextup .lbl{
-    font-family:var(--f-mono);font-size:.62rem;letter-spacing:.1em;
-    text-transform:uppercase;color:var(--ink-3);
-  }
-  .nextup .val{color:var(--ink)}
-  .nextup .val b{font-family:var(--f-mono);font-weight:600}
-  .nextup.go   {border-left-color:var(--ok);   background:var(--ok-soft)}
-  .nextup.hold {border-left-color:var(--warn); background:var(--warn-soft)}
-  .nextup.climb{border-left-color:var(--accent);background:var(--accent-soft)}
-  .nextup.go    .lbl{color:var(--ok)}
-  .nextup.hold  .lbl{color:var(--warn)}
-  .nextup.climb .lbl{color:var(--accent)}
-  .nextup .dot{
-    width:.5rem;height:.5rem;border-radius:50%;flex:none;
-    align-self:center;background:currentColor;
-  }
-  .nextup.go .dot{color:var(--ok)}
-  .nextup.hold .dot{color:var(--warn)}
-  .nextup.climb .dot{color:var(--accent)}
+  /* inline target, appended into .extarget's own line */
+  .target-dyn b{font-weight:600}
+  .target-dyn.go{color:var(--ok)}
+  .target-dyn.go b{color:var(--ok)}
+  .target-dyn.hold{color:var(--warn)}
+  .target-dyn.hold b{color:var(--warn)}
+  .target-dyn.climb{color:var(--accent)}
+  .target-dyn.climb b{color:var(--accent)}
 
   /* ---------- day tabs ---------- */
   .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin-bottom:1.25rem}
@@ -218,7 +201,7 @@
     font-family:var(--f-mono);font-size:.74rem;color:var(--ink-2);
     margin-top:.2rem;font-variant-numeric:tabular-nums;
   }
-  .extarget .st{color:var(--ink);font-weight:500}
+  .extarget b{color:var(--ink);font-weight:600}
   .exnote{font-size:.8rem;color:var(--ink-3);margin:.3rem 0 0;line-height:1.4}
 
   .sets{
@@ -705,21 +688,16 @@ function renderDay(){
       sets = '<div class="sets">' + grid.join("") + '</div>';
     }
 
-    const startTxt = ex.start === 0 ? "bodyweight" : fmt(ex.start) + " lb " + ex.unit;
-    const step = ex.start > 0 ? stepFrom(ex.start) : null;
-
     wrap.innerHTML =
       '<div class="exhead">' +
         '<span class="exidx">' + (i + 1) + '</span>' +
         '<div>' +
           '<h3 class="exname">' + ex.name + '</h3>' +
-          '<div class="extarget">' + nSets + ' × ' + ex.lo + '–' + ex.hi +
-            ' &nbsp;·&nbsp; start <span class="st">' + startTxt + '</span>' +
-            (step != null ? ' &nbsp;·&nbsp; next rung +' + fmt(step) + ' lb' : '') + '</div>' +
+          '<div class="extarget" aria-live="polite">' + nSets + ' × ' + ex.lo + '–' + ex.hi +
+            '<span class="target-dyn"></span></div>' +
           '<p class="exnote">' + ex.note + '</p>' +
         '</div>' +
-      '</div>' + sets +
-      '<div class="nextup" aria-live="polite" hidden></div>';
+      '</div>' + sets;
 
     host.appendChild(wrap);
     if (ready) paintNext(ex, wrap);
@@ -735,18 +713,19 @@ function renderDay(){
 }
 
 function paintNext(ex, wrap){
-  const el = $(".nextup", wrap);
+  const el = $(".target-dyn", wrap);
   let t = nextTarget(ex, sessionAt(week, day)[ex.id] || [], setsFor(week),
                       isDeload(week), sessionAt(week - 1, day)[ex.id] || [],
                       setsFor(week + 1));
-  let label = "Next session";
+  let label = "next week";
   /* This week isn't fully logged yet. Walk backward to the most recent
      week this exercise WAS fully logged and project forward to today's
      set count, so the target shows before you've typed anything, not
      only after. Degrades to the last known session across a skipped
-     week; stays hidden only if nothing has ever been logged. */
+     week; falls through to the static start weight if nothing has ever
+     been logged. */
   if (!t){
-    label = "Today's target";
+    label = "target";
     for (let w = week - 1; w >= 1 && !t; w--){
       t = nextTarget(ex, sessionAt(w, day)[ex.id] || [], setsFor(w),
                       isDeload(w), sessionAt(w - 1, day)[ex.id] || [],
@@ -755,29 +734,27 @@ function paintNext(ex, wrap){
   }
   if (!t){
     /* No computable target. In week 1 with nothing logged yet that's just
-       the normal starting point, stay quiet and let the static rep range
-       carry it. From week 2 on it means a gap in the log (this week and
-       every prior week for this exercise are incomplete), so say so
+       the normal starting point: show the static start weight and the
+       first rung up. From week 2 on it means a gap in the log (this week
+       and every prior week for this exercise are incomplete), so say so
        instead of silently showing nothing. */
     if (week > 1){
-      el.hidden = false;
-      el.className = "nextup hold";
-      el.innerHTML =
-        '<span class="dot"></span><span class="lbl">Missing data</span>' +
-        "<span class=\"val\">Fill in last week's log to see your target.</span>";
-    } else {
-      el.hidden = true; el.innerHTML = ""; el.className = "nextup";
+      el.className = "target-dyn hold";
+      el.innerHTML = " &nbsp;·&nbsp; fill in last week's log to see your target";
+      return;
     }
+    const startTxt = ex.start === 0 ? "bodyweight" : fmt(ex.start) + " lb " + ex.unit;
+    const step = ex.start > 0 ? stepFrom(ex.start) : null;
+    el.className = "target-dyn";
+    el.innerHTML = " &nbsp;·&nbsp; start <b>" + startTxt + "</b>" +
+      (step != null ? " &nbsp;·&nbsp; next rung +" + fmt(step) + " lb" : "");
     return;
   }
-  el.hidden = false;
-  el.className = "nextup " + t.cls;
+  el.className = "target-dyn " + t.cls;
   const val = t.uniform === false
     ? t.sets.map(x => fmt(x.w) + "×" + x.r).join(", ")
     : '<b>' + fmt(t.w) + ' lb</b> × ' + t.reps.join(", ");
-  el.innerHTML =
-    '<span class="dot"></span><span class="lbl">' + label + '</span>' +
-    '<span class="val">' + val + '</span><span class="lbl">' + t.why + '</span>';
+  el.innerHTML = " &nbsp;·&nbsp; " + label + " " + val + " &nbsp;·&nbsp; " + t.why;
 }
 
 function paintWeek(){
