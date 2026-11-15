@@ -25,3 +25,5 @@ Log the weight and reps for each set and the page works out the next session's t
 ## Data
 
 Workout logs are stored separately from this source, in the hosted page's own database, this repo only tracks the program and app code, not logged sets.
+
+Backups of the hosted log are kept in `backups/` as `log-all-YYYY-MM-DD.json`, taken before any change to the deployed artifact (see `CLAUDE.md`).
