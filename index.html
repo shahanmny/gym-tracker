@@ -588,12 +588,12 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
     if (p.length === n && n >= 2 && p.every(d => d.w === p[0].w) && p[0].w === w){
       const pAvg = p.reduce((a, d) => a + d.r, 0) / n;
       const cAvg = reps.reduce((a, b) => a + b, 0) / nSets;
-      if (cAvg <= pAvg){
-        const down = prevWeight(w);
+      /* At the lightest setting there is nothing to drop to, so a "stall"
+         there must not freeze the reps: fall through to +1 rep instead. */
+      const down = prevWeight(w);
+      if (cAvg <= pAvg && down != null){
         return { uniform:true, w:w, reps:reps.slice(),
-                 why:down == null
-                   ? "no gain on this weight, run it back, it's the lightest setting"
-                   : "no gain on this weight, run it back, or drop to " + fmt(down) + " lb if it stalls again" };
+                 why:"no gain on this weight, run it back, or drop to " + fmt(down) + " lb if it stalls again" };
       }
     }
   }
