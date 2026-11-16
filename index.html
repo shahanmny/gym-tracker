@@ -541,6 +541,9 @@ function status(msg){ $("#savestate").textContent = msg; }
 
 /* ---- the progression rule: what you do next session ---- */
 function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
+  /* Every target rep count stays inside the exercise's range: never above
+     the top, never below the bottom. */
+  const fit = r => Math.max(ex.lo, Math.min(ex.hi, r));
   const done = [];
   let zero = false;
   for (let i = 0; i < nSets; i++){
@@ -550,7 +553,7 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
     done.push({ w:Number(r.w), r:Number(r.r) });
   }
   if (zero)
-    return { uniform:true, w:done[0].w, reps:done.map(d => d.r),
+    return { uniform:true, w:done[0].w, reps:done.map(d => fit(d.r)),
              why:"a set went to zero, drop a setting and rebuild" };
 
   const uniform   = done.every(d => d.w === done[0].w);
@@ -559,7 +562,7 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
   const nSetsNext = nextSets || nSets;
 
   if (deload)
-    return { uniform:uniform, w:w, sets:done, reps:reps.slice(),
+    return { uniform:uniform, w:w, sets:done.map(d => ({ w:d.w, r:fit(d.r) })), reps:reps.map(fit),
              why:"deload, hold this weight, no jump this week" };
 
   /* Top of the range on every set, at ONE weight → next real setting.
@@ -577,6 +580,7 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
   /* A stall is NO IMPROVEMENT at the same weight, not "below the range".
      Landing under the floor right after a jump is normal and expected.
      Per-set averages, so a 2-set deload week still compares. */
+  let stallWhy = null;
   if (uniform && prevRows && prevRows.length){
     const n = Math.min(nSets, prevRows.length);
     const p = [];
@@ -588,24 +592,27 @@ function nextTarget(ex, rows, nSets, deload, prevRows, nextSets){
     if (p.length === n && n >= 2 && p.every(d => d.w === p[0].w) && p[0].w === w){
       const pAvg = p.reduce((a, d) => a + d.r, 0) / n;
       const cAvg = reps.reduce((a, b) => a + b, 0) / nSets;
-      /* At the lightest setting there is nothing to drop to, so a "stall"
-         there must not freeze the reps: fall through to +1 rep instead. */
-      const down = prevWeight(w);
-      if (cAvg <= pAvg && down != null){
-        return { uniform:true, w:w, reps:reps.slice(),
-                 why:"no gain on this weight, run it back, or drop to " + fmt(down) + " lb if it stalls again" };
+      /* A stall never freezes the target: the next target is still +1 rep,
+         the stall only changes the note (and points at a lighter setting
+         if there is one). Repeating the same reps would just hand back the
+         number you already couldn't beat. */
+      if (cAvg <= pAvg){
+        const down = prevWeight(w);
+        stallWhy = down == null
+          ? "no gain on this weight, push for +1 rep"
+          : "no gain on this weight, push for +1 rep, or drop to " + fmt(down) + " lb if it stalls again";
       }
     }
   }
 
   if (!uniform)
     return { uniform:false,
-             sets:done.map(d => ({ w:d.w, r:Math.min(ex.hi, d.r + 1) })),
+             sets:done.map(d => ({ w:d.w, r:fit(d.r + 1) })),
              why:"+1 rep per set, same weights" };
 
   return { uniform:true, w:w,
-           reps:reps.map(r => Math.min(ex.hi, r + 1)).slice(0, nSetsNext),
-           why:"+1 rep per set, same weight" };
+           reps:reps.map(r => fit(r + 1)).slice(0, nSetsNext),
+           why:stallWhy || "+1 rep per set, same weight" };
 }
 
 /* ==================================================================
